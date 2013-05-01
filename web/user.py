@@ -6,16 +6,18 @@
 """
 
 from flask import request, render_template, url_for, redirect, flash
-from flask.ext import wtf, login
+from flask.ext import login
+from flask.ext.wtf import Form
+from wtforms import PasswordField, validators
 from web import webapp
 from web import webdb as db
-from database import User
+from database import User, Challenge
 
 
-class SettingsForm(wtf.Form):
-    new_password = wtf.PasswordField('New password', [
-        wtf.validators.Required(),
-        wtf.validators.Length(max=256)
+class SettingsForm(Form):
+    new_password = PasswordField('New password', [
+        validators.Required(),
+        validators.Length(max=256)
     ])
 
     def validate(self):
@@ -49,3 +51,23 @@ def show_settings():
             form=form,
             user=login.current_user
     )
+
+
+@webapp.route('/validate/<int:id>/', methods=['POST'])
+def validate_challenge(id):
+    """Test if it is the right flag and validate the challenge"""
+
+    challenge = db.session.query(Challenge).filter(Challenge.id==id).first()
+    if not challenge:
+        flash('Challenge not found', 'error')
+    else:
+        if request.method == 'POST':
+            if request.form.has_key('flag') \
+                    and request.form['flag'] == challenge.flag:
+                login.current_user.validated.append(challenge)
+                db.session.add(login.current_user)
+                db.session.commit()
+                flash('Challenge validated', 'success')
+            else:
+                flash('Incorrect flag', 'error')
+    return redirect(url_for('show_challenge', id=id))
