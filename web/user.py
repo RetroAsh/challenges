@@ -7,8 +7,7 @@
 
 from flask import request, render_template, url_for, redirect, flash
 from flask.ext import login
-from flask.ext.wtf import Form
-from wtforms import PasswordField, validators
+from wtforms import Form, PasswordField, validators
 from web import webapp
 from web import webdb as db
 from database import User, Challenge
